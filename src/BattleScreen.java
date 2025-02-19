@@ -4,7 +4,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 
 public class BattleScreen extends JFrame {
-    private Soul me = new Soul(400, 400, 0, 0, 50, Color.BLACK);
+    private Soul me;
 
     public BattleScreen() {
         setTitle("Sans Fight - Battle");
@@ -12,31 +12,46 @@ public class BattleScreen extends JFrame {
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        // Panel for movement
+        me = new Soul(400, 400, "/Resources/Soul.png"); // Load soul image
+
         JPanel battlePanel = new JPanel() {
+
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                g.setColor(me.getColor());
-                g.fillOval(me.getX(), me.getY(), me.getSize(), me.getSize());
+                me.draw(g);
+
             }
         };
 
         battlePanel.setFocusable(true);
-        battlePanel.setBackground(Color.WHITE);
+        battlePanel.setBackground(Color.BLACK);
+        add(battlePanel);
+        setVisible(true);
+
         battlePanel.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_W) me.setY(me.getY() - 4);
-                if (e.getKeyCode() == KeyEvent.VK_S) me.setY(me.getY() + 4);
-                if (e.getKeyCode() == KeyEvent.VK_A) me.setX(me.getX() - 4);
-                if (e.getKeyCode() == KeyEvent.VK_D) me.setX(me.getX() + 4);
-                battlePanel.repaint(); // Update position
+
+                if (e.getKeyCode() == KeyEvent.VK_W) {
+                    me.setY(me.getY() - 4);
+                }
+
+                else if (e.getKeyCode() == KeyEvent.VK_S) {
+                    me.setY(me.getY() + 4);
+                }
+
+                else if (e.getKeyCode() == KeyEvent.VK_D) {
+                    me.setX(me.getX() + 4);
+                }
+
+                else if (e.getKeyCode() == KeyEvent.VK_A) {
+                    me.setX(me.getX() - 4);
+                }
+                battlePanel.repaint(); // Update the screen after movement
             }
         });
 
-        add(battlePanel);
-        setVisible(true);
+        battlePanel.requestFocusInWindow(); // Ensure key events are captured
     }
 }
-
