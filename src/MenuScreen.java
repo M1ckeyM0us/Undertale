@@ -1,46 +1,79 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+private SoundPlayer menuMusic;
 
 public class MenuScreen extends JFrame {
+
+    private Image titleImage;
+
     public MenuScreen() {
+
+        setTitle("Sans Fight - Menu");
         setSize(1920, 1080);
         setLocationRelativeTo(null);
-        getContentPane().setBackground(Color.BLACK);
-        setLayout(null);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        // Load top image (Undertale logo)
-        ImageIcon topImageIcon = new ImageIcon(getClass().getResource("/Resources/Undertale.png"));
-        JLabel topImageLabel = new JLabel(topImageIcon);
-        topImageLabel.setBounds(0, 50, 1920, 300); // Adjust if needed
+        menuMusic = new SoundPlayer("/Resources/menu_music.wav");
+        menuMusic.play(true); // Loop the menu music
 
-        // Load button image (Fight button)
-        ImageIcon buttonIcon = new ImageIcon(getClass().getResource("/Resources/Fight.jpg"));
-        JButton playButton = new JButton(buttonIcon);
-        playButton.setBorderPainted(false);
-        playButton.setContentAreaFilled(false);
-        playButton.setFocusPainted(false);
+        // Load Undertale title image
+        titleImage = new ImageIcon(getClass().getResource("/Resources/Undertale.png")).getImage();
 
-        // Center the button
+        // Create panel with black background
+        JPanel panel = new JPanel() {
+
+            @Override
+            protected void paintComponent(Graphics g) {
+
+                super.paintComponent(g);
+                g.setColor(Color.BLACK);
+                g.fillRect(0, 0, getWidth(), getHeight()); // Full black background
+
+                // Draw title image at the top center
+                int titleWidth = 1800;
+                int titleHeight = 600;
+                int titleX = (getWidth() - titleWidth) / 2;
+                int titleY = -100;
+                g.drawImage(titleImage, titleX, titleY, titleWidth, titleHeight, this);
+
+            }
+
+        };
+        panel.setLayout(null);
+
+        // Load "Fight" button image
+        JButton startButton = new JButton(new ImageIcon(getClass().getResource("/Resources/Fight.jpg")));
+
+        // Get button size from image
+        ImageIcon buttonIcon = (ImageIcon) startButton.getIcon();
         int buttonWidth = buttonIcon.getIconWidth();
         int buttonHeight = buttonIcon.getIconHeight();
+
+        // Set button position dynamically
         int buttonX = (1920 - buttonWidth) / 2;
-        int buttonY = 500;
+        int buttonY = 600; // Below the title
 
-        playButton.setBounds(buttonX, buttonY, buttonWidth, buttonHeight);
+        startButton.setBounds(buttonX, buttonY, buttonWidth, buttonHeight);
+        startButton.setBorderPainted(false);
+        startButton.setContentAreaFilled(false);
+        startButton.setFocusPainted(false);
 
-        // Start BattleScreen when button is clicked
-        playButton.addActionListener(e -> {
-            dispose(); // Close menu
-            new BattleScreen(); // Open battle screen
+        startButton.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+                dispose(); // Close menu
+                new BattleScreen(); // Open battle screen
+
+            }
         });
 
-        add(topImageLabel);
-        add(playButton);
-        setExtendedState(JFrame.MAXIMIZED_BOTH);
+        panel.add(startButton);
+        add(panel);
         setVisible(true);
-    }
 
-    public static void main(String[] args) {
-        new MenuScreen();
     }
 }
