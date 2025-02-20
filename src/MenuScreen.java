@@ -2,7 +2,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-private SoundPlayer menuMusic;
 
 public class MenuScreen extends JFrame {
 
@@ -14,9 +13,6 @@ public class MenuScreen extends JFrame {
         setSize(1920, 1080);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        menuMusic = new SoundPlayer("/Resources/menu_music.wav");
-        menuMusic.play(true); // Loop the menu music
 
         // Load Undertale title image
         titleImage = new ImageIcon(getClass().getResource("/Resources/Undertale.png")).getImage();
@@ -41,6 +37,7 @@ public class MenuScreen extends JFrame {
             }
 
         };
+
         panel.setLayout(null);
 
         // Load "Fight" button image
