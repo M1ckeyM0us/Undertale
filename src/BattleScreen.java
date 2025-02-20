@@ -63,20 +63,41 @@ public class BattleScreen extends JFrame {
         });
 
         Timer timer = new Timer(16, e -> {
+
             moveSoul();
             battlePanel.repaint();
+
         });
+
         timer.start();
+
     }
 
     private void moveSoul() {
 
-        int newX = me.getX(), newY = me.getY();
+        int newX = me.getX();
+        int newY = me.getY();
 
-        if (keysPressed.contains(KeyEvent.VK_W)) newY -= SPEED;
-        if (keysPressed.contains(KeyEvent.VK_S)) newY += SPEED;
-        if (keysPressed.contains(KeyEvent.VK_A)) newX -= SPEED;
-        if (keysPressed.contains(KeyEvent.VK_D)) newX += SPEED;
+        if (keysPressed.contains(KeyEvent.VK_W)){
+
+            newY -= SPEED;
+
+        }
+        if (keysPressed.contains(KeyEvent.VK_S)){
+
+            newY += SPEED;
+
+        }
+        if (keysPressed.contains(KeyEvent.VK_A)){
+
+            newX -= SPEED;
+
+        }
+        if (keysPressed.contains(KeyEvent.VK_D)){
+
+            newX += SPEED;
+
+        }
 
         if (battleBox.contains(newX, newY, me.getSize())) {
 
