@@ -7,6 +7,7 @@ public class MenuScreen extends JFrame {
 
     private Image titleImage;
 
+
     public MenuScreen() {
 
         setTitle("Sans Fight - Menu");

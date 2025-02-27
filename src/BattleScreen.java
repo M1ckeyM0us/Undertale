@@ -11,6 +11,8 @@ public class BattleScreen extends JFrame {
     private static final int SPEED = 5;
     private Image sansImage;
     private JButton fightButton, actButton, itemButton, mercyButton;
+    private boolean menuActive = false; // Track if a menu is open
+
 
     public BattleScreen() {
         setTitle("Sans Fight - Battle");
@@ -46,7 +48,7 @@ public class BattleScreen extends JFrame {
 
         battlePanel.setFocusable(true);
         add(battlePanel);
-        setVisible(true);
+        setVisible(true);  // Ensure proper sizing before placing buttons
 
         // Add key listener to move the soul
         battlePanel.addKeyListener(new KeyAdapter() {
@@ -68,7 +70,7 @@ public class BattleScreen extends JFrame {
         });
         timer.start();
 
-        // Button icons (make sure to replace these with the correct image files)
+        // Load button images
         ImageIcon fightIcon = new ImageIcon(getClass().getResource("/Resources/Fight1.png"));
         ImageIcon actIcon = new ImageIcon(getClass().getResource("/Resources/Act1.png"));
         ImageIcon itemIcon = new ImageIcon(getClass().getResource("/Resources/Item1.png"));
@@ -83,23 +85,23 @@ public class BattleScreen extends JFrame {
         // Calculate button spacing
         int buttonWidth = fightIcon.getIconWidth();
         int buttonHeight = fightIcon.getIconHeight();
-        int totalWidth = 4 * buttonWidth + 3 * 20; // Total width of buttons + spacing (20 pixels between buttons)
-        int startX = (getWidth() - totalWidth) / 2; // Center the buttons horizontally
+        int totalWidth = 4 * buttonWidth + 3 * 20;
+        int startX = (getWidth() - totalWidth) / 2;
 
-        // Set the buttons' bounds (center them horizontally and adjust the vertical positioning)
+        // Set button positions
         fightButton.setBounds(startX, 850, buttonWidth, buttonHeight);
         actButton.setBounds(startX + buttonWidth + 20, 850, buttonWidth, buttonHeight);
         itemButton.setBounds(startX + 2 * (buttonWidth + 20), 850, buttonWidth, buttonHeight);
         mercyButton.setBounds(startX + 3 * (buttonWidth + 20), 850, buttonWidth, buttonHeight);
 
-        // Action listeners for buttons (replace with actual actions)
+        // Add button actions
         fightButton.addActionListener(e -> System.out.println("Fight button pressed!"));
         actButton.addActionListener(e -> System.out.println("Act button pressed!"));
         itemButton.addActionListener(e -> System.out.println("Item button pressed!"));
         mercyButton.addActionListener(e -> System.out.println("Mercy button pressed!"));
 
-        // Add the buttons to the panel
-        battlePanel.setLayout(null);  // Use null layout for absolute positioning
+        // Add buttons
+        battlePanel.setLayout(null);
         battlePanel.add(fightButton);
         battlePanel.add(actButton);
         battlePanel.add(itemButton);
@@ -107,7 +109,8 @@ public class BattleScreen extends JFrame {
     }
 
     private void moveSoul() {
-        int newX = me.getX(), newY = me.getY();
+        int newX = me.getX();
+        int newY = me.getY();
 
         if (keysPressed.contains(KeyEvent.VK_W)) newY -= SPEED;
         if (keysPressed.contains(KeyEvent.VK_S)) newY += SPEED;
