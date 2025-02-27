@@ -13,7 +13,6 @@ public class BattleScreen extends JFrame {
     private JButton fightButton, actButton, itemButton, mercyButton;
     private boolean menuActive = false; // Track if a menu is open
 
-
     public BattleScreen() {
         setTitle("Sans Fight - Battle");
         setSize(1920, 1080);
@@ -42,19 +41,19 @@ public class BattleScreen extends JFrame {
                 g.drawImage(sansImage, 750, 50, 400, 400, this);
 
                 battleBox.draw(g);
-                me.draw(g);
+                if (!menuActive) me.draw(g);
             }
         };
 
         battlePanel.setFocusable(true);
         add(battlePanel);
-        setVisible(true);  // Ensure proper sizing before placing buttons
+        setVisible(true);
 
         // Add key listener to move the soul
         battlePanel.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                keysPressed.add(e.getKeyCode());
+                if (!menuActive) keysPressed.add(e.getKeyCode());
             }
 
             @Override
@@ -65,7 +64,7 @@ public class BattleScreen extends JFrame {
 
         // Timer for soul movement and repainting
         Timer timer = new Timer(16, e -> {
-            moveSoul();
+            if (!menuActive) moveSoul();
             battlePanel.repaint();
         });
         timer.start();
@@ -95,10 +94,10 @@ public class BattleScreen extends JFrame {
         mercyButton.setBounds(startX + 3 * (buttonWidth + 20), 850, buttonWidth, buttonHeight);
 
         // Add button actions
-        fightButton.addActionListener(e -> System.out.println("Fight button pressed!"));
-        actButton.addActionListener(e -> System.out.println("Act button pressed!"));
-        itemButton.addActionListener(e -> System.out.println("Item button pressed!"));
-        mercyButton.addActionListener(e -> System.out.println("Mercy button pressed!"));
+        fightButton.addActionListener(e -> selectOption("Fight"));
+        actButton.addActionListener(e -> selectOption("Act"));
+        itemButton.addActionListener(e -> selectOption("Item"));
+        mercyButton.addActionListener(e -> selectOption("Mercy"));
 
         // Add buttons
         battlePanel.setLayout(null);
@@ -106,6 +105,30 @@ public class BattleScreen extends JFrame {
         battlePanel.add(actButton);
         battlePanel.add(itemButton);
         battlePanel.add(mercyButton);
+    }
+
+    private void selectOption(String option) {
+        menuActive = true; // Stop soul movement
+        System.out.println(option + " button pressed!");
+
+        if (option.equals("Fight")) {
+            startAttack();
+        }
+
+        // Simulate closing menu after an action
+        Timer timer = new Timer(1000, e -> {
+            menuActive = false; // Allow movement again
+            keysPressed.clear(); // Reset key presses
+            requestFocusInWindow(); // Ensure the panel is focused to detect key presses
+        });
+        timer.setRepeats(false);
+        timer.start();
+    }
+
+
+    private void startAttack() {
+        System.out.println("Starting attack sequence...");
+        // Implement attack logic here
     }
 
     private void moveSoul() {

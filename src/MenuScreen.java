@@ -39,6 +39,8 @@ public class MenuScreen extends JFrame {
 
         };
 
+
+
         panel.setLayout(null);
 
         // Load "Fight" button image
