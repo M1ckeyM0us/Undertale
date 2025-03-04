@@ -12,6 +12,7 @@ public class BattleScreen extends JFrame {
     private Image sansImage;
     private JButton fightButton, actButton, itemButton, mercyButton;
     private boolean menuActive = false; // Track if a menu is open
+    private int health = 92; // Player's health (Max: 92)
 
     public BattleScreen() {
         setTitle("Sans Fight - Battle");
@@ -42,6 +43,9 @@ public class BattleScreen extends JFrame {
 
                 battleBox.draw(g);
                 if (!menuActive) me.draw(g);
+
+                // Draw health bar
+                drawHealthBar(g);
             }
         };
 
@@ -125,10 +129,33 @@ public class BattleScreen extends JFrame {
         timer.start();
     }
 
-
     private void startAttack() {
         System.out.println("Starting attack sequence...");
-        // Implement attack logic here
+        takeDamage(10); // Example damage when attacking
+    }
+
+    private void takeDamage(int damage) {
+        health -= damage;
+        if (health < 0) health = 0;
+        System.out.println("Player took " + damage + " damage! HP: " + health);
+    }
+
+    private void drawHealthBar(Graphics g) {
+        int barWidth = 300;
+        int barHeight = 30;
+        int x = 50;
+        int y = getHeight() - 100;
+
+        g.setColor(Color.WHITE);
+        g.drawRect(x - 2, y - 2, barWidth + 4, barHeight + 4); // White border
+
+        g.setColor(Color.RED);
+        int currentWidth = (int) ((health / 92.0) * barWidth);
+        g.fillRect(x, y, currentWidth, barHeight); // Red health bar
+
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Arial", Font.BOLD, 20));
+        g.drawString("HP: " + health + " / 92", x + 10, y + 22); // Display HP
     }
 
     private void moveSoul() {
