@@ -1,31 +1,23 @@
-import java.awt.event.KeyEvent;
-import java.util.Set;
+import java.awt.*;
 
 public class Movement {
     private Soul me;
-    private Box fightBox;
-    private Set<Integer> pressedKeys;
-    private int speed = 4;
+    private Rectangle fightBox;
 
-    public Movement(Soul me, Box fightBox, Set<Integer> pressedKeys) {
+    public Movement(Soul me, Rectangle fightBox) {
         this.me = me;
         this.fightBox = fightBox;
-        this.pressedKeys = pressedKeys;
     }
 
-    public void update() {
-        int newX = me.getX();
-        int newY = me.getY();
+    public void checkSoulPosition(int newX, int newY) {
+        // Create a Rectangle to represent the soul's bounds
+        Rectangle soulBounds = new Rectangle(newX, newY, me.getWidth(), me.getHeight());
 
-        if (pressedKeys.contains(KeyEvent.VK_W)) newY -= speed;
-        if (pressedKeys.contains(KeyEvent.VK_S)) newY += speed;
-        if (pressedKeys.contains(KeyEvent.VK_A)) newX -= speed;
-        if (pressedKeys.contains(KeyEvent.VK_D)) newX += speed;
-
-        // Keep Soul inside the battle box
-        if (fightBox.contains(newX, newY, me.getSize())) {
-            me.setX(newX);
-            me.setY(newY);
+        // Check if the soul's bounds intersect with the fightBox
+        if (fightBox.intersects(soulBounds)) {
+            int soulWidth = me.getWidth();
+            int soulHeight = me.getHeight();
+            // Additional logic can be added here based on the intersection
         }
     }
 }

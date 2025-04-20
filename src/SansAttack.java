@@ -1,40 +1,38 @@
 import java.awt.*;
-import javax.swing.*;
 
 public class SansAttack {
     private int x, y, width, height, speed;
-    private Image image;
-    private String type;
+    private boolean active;
 
-    public SansAttack(int x, int y, int width, int height, int speed, String type, String imagePath) {
+    public SansAttack(int x, int y, int width, int height, int speed) {
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
         this.speed = speed;
-        this.type = type;
-        this.image = new ImageIcon(getClass().getResource(imagePath)).getImage();
+        this.active = true;
     }
 
     public void update() {
-        x -= speed; // Moves left, adjust as needed
+        x -= speed;
+        if (x + width < 0) {
+            active = false; // Attack went off screen
+        }
     }
 
     public void draw(Graphics g) {
-        g.drawImage(image, x, y, width, height, null);
+        g.setColor(Color.WHITE);
+        g.fillRect(x, y, width, height); // Simple bone visual
     }
 
-    public boolean collidesWith(Soul soul) {
-        Rectangle attackRect = new Rectangle(x, y, width, height);
-        Rectangle soulRect = new Rectangle(soul.getX(), soul.getY(), soul.getSize(), soul.getSize());
-        return attackRect.intersects(soulRect);
+    public boolean checkCollision(Soul soul) {
+        Rectangle bone = new Rectangle(x, y, width, height);
+        Rectangle soulHitbox = new Rectangle(soul.getX(), soul.getY(), soul.getWidth(), soul.getHeight());
+        return bone.intersects(soulHitbox);
     }
 
-    public boolean isOffScreen() {
-        return x + width < 0;
-    }
 
-    public String getType() {
-        return type;
+    public boolean isActive() {
+        return active;
     }
 }

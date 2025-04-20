@@ -1,103 +1,176 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class BattleScreen extends JFrame {
+    private Rectangle battleBox;
     private Soul me;
-    private Box battleBox;
-    private final Set<Integer> keysPressed = new HashSet<>();
-    private static final int SPEED = 5;
-    private Image sansImage;
+    private JPanel battlePanel;
+    private boolean up, down, left, right;
+    private boolean menuActive = true;
+
     private JButton fightButton, actButton, itemButton, mercyButton;
-    private boolean menuActive = false;
-    private int health = 92;
+
+    // Sans attack system
+    private List<SansAttack> attacks = new ArrayList<>();
+    private long lastAttackTime = 0;
+    private int attackInterval = 1000; // Time between attacks in ms
 
     public BattleScreen() {
-        setTitle("Sans Fight - Battle");
+        setTitle("Battle Box");
         setSize(1920, 1080);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        sansImage = new ImageIcon(getClass().getResource("/Resources/Sans.png")).getImage();
+        // Define battle box
+        me = new Soul(700, 450, "red", 40, 40);
 
-        int boxWidth = 750;
-        int boxHeight = 250;
-        int boxX = (1920 - boxWidth) / 2;
-        int boxY = (1080 - boxHeight) / 2 + 100;
-
-        battleBox = new Box(boxX, boxY, boxWidth, boxHeight);
-        me = new Soul(boxX + boxWidth / 2 - 8, boxY + boxHeight / 2 - 8, "/Resources/Soul.png", 16, 16);
-
-        JPanel battlePanel = new JPanel() {
+        // Panel for the battle
+        battlePanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                setBackground(Color.BLACK);
-                g.drawImage(sansImage, 750, 50, 400, 400, this);
-                battleBox.draw(g);
-                if (!menuActive) me.draw(g);
-                drawHealthBar(g);
+                g.setColor(Color.BLACK);
+                g.fillRect(0, 0, getWidth(), getHeight());
+
+                // Draw battle box
+                g.setColor(Color.WHITE);
+                g.drawRect(battleBox.x, battleBox.y, battleBox.width, battleBox.height);
+
+                // Draw soul
+                me.draw(g);
+
+                // Draw all attacks
+                for (SansAttack attack : attacks) {
+                    attack.draw(g);
+                }
             }
         };
-
         battlePanel.setFocusable(true);
+        battlePanel.requestFocusInWindow();
         add(battlePanel);
-        setVisible(true);
 
-        battlePanel.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                if (!menuActive) keysPressed.add(e.getKeyCode());
-            }
-            @Override
-            public void keyReleased(KeyEvent e) {
-                keysPressed.remove(e.getKeyCode());
-            }
-        });
+        setupKeyBindings();
 
+        // Menu buttons
+        fightButton = createButton("Fight", 660, 650);
+        actButton = createButton("Act", 860, 650);
+        itemButton = createButton("Item", 1060, 650);
+        mercyButton = createButton("Mercy", 1260, 650);
+
+        battlePanel.setLayout(null);
+        battlePanel.add(fightButton);
+        battlePanel.add(actButton);
+        battlePanel.add(itemButton);
+        battlePanel.add(mercyButton);
+
+        // Game loop timer
         Timer timer = new Timer(16, e -> {
             if (!menuActive) moveSoul();
+
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - lastAttackTime > attackInterval) {
+                spawnAttack();
+                lastAttackTime = currentTime;
+            }
+
+            updateAttacks();
             battlePanel.repaint();
         });
         timer.start();
+
+        setVisible(true);
     }
 
-    private void drawHealthBar(Graphics g) {
-        int barWidth = 300;
-        int barHeight = 30;
-        int x = 50;
-        int y = getHeight() - 100;
+    private JButton createButton(String text, int x, int y) {
+        JButton button = new JButton(text);
+        button.setBounds(x, y, 160, 60);
+        button.setBorderPainted(false);
+        button.setContentAreaFilled(false);
+        button.setFocusPainted(false);
+        button.setForeground(Color.WHITE);
+        button.setFont(new Font("Arial", Font.BOLD, 20));
+        button.setRolloverEnabled(false); // disable hover effect
+        return button;
+    }
 
-        g.setColor(Color.WHITE);
-        g.setFont(new Font("Arial", Font.BOLD, 24));
-        g.drawString("Chara", x, y - 10);
-        g.drawString("LV 19", x + 200, y - 10);
+    private void setupKeyBindings() {
+        battlePanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("pressed UP"), "upPressed");
+        battlePanel.getActionMap().put("upPressed", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) { up = true; }
+        });
+        battlePanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released UP"), "upReleased");
+        battlePanel.getActionMap().put("upReleased", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) { up = false; }
+        });
 
-        g.setColor(Color.BLACK);
-        g.fillRect(x - 2, y - 2, barWidth + 4, barHeight + 4);
-        g.setColor(Color.WHITE);
-        g.drawRect(x - 2, y - 2, barWidth + 4, barHeight + 4);
-        g.setColor(Color.YELLOW);
-        int currentWidth = (int) ((health / 92.0) * barWidth);
-        g.fillRect(x, y, currentWidth, barHeight);
+        battlePanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("pressed DOWN"), "downPressed");
+        battlePanel.getActionMap().put("downPressed", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) { down = true; }
+        });
+        battlePanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released DOWN"), "downReleased");
+        battlePanel.getActionMap().put("downReleased", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) { down = false; }
+        });
 
-        g.setColor(Color.WHITE);
-        g.drawString("HP " + health + "/92", x + 120, y + 22);
+        battlePanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("pressed LEFT"), "leftPressed");
+        battlePanel.getActionMap().put("leftPressed", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) { left = true; }
+        });
+        battlePanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released LEFT"), "leftReleased");
+        battlePanel.getActionMap().put("leftReleased", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) { left = false; }
+        });
+
+        battlePanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("pressed RIGHT"), "rightPressed");
+        battlePanel.getActionMap().put("rightPressed", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) { right = true; }
+        });
+        battlePanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released RIGHT"), "rightReleased");
+        battlePanel.getActionMap().put("rightReleased", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) { right = false; }
+        });
+
+        battlePanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ENTER"), "enterPressed");
+        battlePanel.getActionMap().put("enterPressed", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                menuActive = !menuActive;
+            }
+        });
     }
 
     private void moveSoul() {
-        int newX = me.getX();
-        int newY = me.getY();
-        if (keysPressed.contains(KeyEvent.VK_W)) newY -= SPEED;
-        if (keysPressed.contains(KeyEvent.VK_S)) newY += SPEED;
-        if (keysPressed.contains(KeyEvent.VK_A)) newX -= SPEED;
-        if (keysPressed.contains(KeyEvent.VK_D)) newX += SPEED;
-        if (battleBox.contains(newX, newY, me.getSize())) {
-            me.setX(newX);
-            me.setY(newY);
+        if (up) me.move(0, -5);
+        if (down) me.move(0, 5);
+        if (left) me.move(-5, 0);
+        if (right) me.move(5, 0);
+    }
+
+    private void spawnAttack() {
+        int attackY = battleBox.y + (int) (Math.random() * (battleBox.height - 20));
+        attacks.add(new SansAttack(1920, attackY, 40, 20, 6));
+    }
+
+    private void updateAttacks() {
+        Iterator<SansAttack> it = attacks.iterator();
+        while (it.hasNext()) {
+            SansAttack attack = it.next();
+            attack.update();
+            if (attack.checkCollision(me)) {
+                takeDamage(5); // Soul hit
+                it.remove();
+            } else if (!attack.isActive()) {
+                it.remove();
+            }
         }
+    }
+
+    private void takeDamage(int amount) {
+        System.out.println("Ouch! Took " + amount + " damage!");
+        // You can add health here if you want to track HP
     }
 
     public static void main(String[] args) {

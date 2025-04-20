@@ -1,48 +1,45 @@
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Graphics;
+import java.awt.Color;
 
 public class Soul {
+    private int x, y;
+    private String color;
+    private int width, height;
 
-    private int x, y, size;
-    private Image image;
-
-    public Soul(int x, int y, String path, int sizeX, int sizeY) {
-
+    public Soul(int x, int y, String color, int width, int height) {
         this.x = x;
         this.y = y;
-        this.size = 32; // Correct Undertale size
-        this.image = new ImageIcon(getClass().getResource(path)).getImage();
-
+        this.color = color;
+        this.width = width;
+        this.height = height;
     }
 
-    public void draw(Graphics g) {
-
-        g.drawImage(image, x, y, size, size, null);
-    }
-
-    public void setX(int x) {
-
-        this.x = x;
-
-    }
-    public void setY(int y) {
-
-        this.y = y;
-
-    }
+    // Getters
     public int getX() {
-
         return x;
-
     }
+
     public int getY() {
-
         return y;
-
     }
-    public int getSize() {
 
-        return size;
+    public int getWidth() {
+        return width;
+    }
 
+    public int getHeight() {
+        return height;
+    }
+
+    // Move method to update position
+    public void move(int dx, int dy) {
+        this.x += dx;
+        this.y += dy;
+    }
+
+    // Method to draw the soul
+    public void draw(Graphics g) {
+        g.setColor(Color.RED); // Color of the soul, you can change it
+        g.fillRect(x, y, width, height); // Draw the soul as a rectangle
     }
 }
