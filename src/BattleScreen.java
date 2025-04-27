@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BattleScreen extends JFrame {
-    private JPanel battlePanel; // Changed to instance variable for access
+    private JPanel battlePanel;
     private Soul me;
     private Box battleBox;
     private final Set<Integer> keysPressed = new HashSet<>();
@@ -18,6 +18,8 @@ public class BattleScreen extends JFrame {
     private boolean menuActive = false;
     private int health = 92;
     private List<SansAttack> attacks = new ArrayList<>();
+    private int attackPhase = 0;
+    private boolean attackInProgress = false;
 
     public BattleScreen() {
         setTitle("Sans Fight - Battle");
@@ -35,7 +37,6 @@ public class BattleScreen extends JFrame {
         battleBox = new Box(boxX, boxY, boxWidth, boxHeight);
         me = new Soul(boxX + boxWidth / 2 - 8, boxY + boxHeight / 2 - 8, "/Resources/Soul.png", 16, 16);
 
-        // Initialize battlePanel as an instance variable
         battlePanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -55,14 +56,12 @@ public class BattleScreen extends JFrame {
             }
         };
 
-        // Ensure battlePanel is focusable
         battlePanel.setFocusable(true);
-        battlePanel.requestFocusInWindow(); // Request focus initially
+        battlePanel.requestFocusInWindow();
 
         add(battlePanel);
         setVisible(true);
 
-        // Key listener for movement
         battlePanel.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -75,7 +74,6 @@ public class BattleScreen extends JFrame {
             }
         });
 
-        // Timer to keep the game moving
         Timer timer = new Timer(16, e -> {
             if (!menuActive) {
                 moveSoul();
@@ -85,7 +83,6 @@ public class BattleScreen extends JFrame {
         });
         timer.start();
 
-        // Set up buttons
         ImageIcon fightIcon = new ImageIcon(getClass().getResource("/Resources/Fight1.png"));
         ImageIcon actIcon = new ImageIcon(getClass().getResource("/Resources/Act1.png"));
         ImageIcon itemIcon = new ImageIcon(getClass().getResource("/Resources/Item1.png"));
@@ -131,26 +128,96 @@ public class BattleScreen extends JFrame {
     }
 
     private void selectOption(String option) {
-        menuActive = false; // Allow movement
-        System.out.println(option + " button pressed!");
+        if (attackInProgress) return;
 
         if (option.equals("Fight")) {
-            startAttack(); // Start the attack if 'Fight' is selected
+            attackInProgress = true;
+            hideButtons();
+            startAttack();
+        } else {
+            menuActive = false;
+            System.out.println(option + " button pressed!");
         }
 
-        // Remove keysPressed.clear() to avoid resetting key states unnecessarily
-        // keysPressed.clear(); // Commented out
-
-        // Force focus back to battlePanel to ensure key events are captured
         battlePanel.requestFocusInWindow();
     }
 
     private void startAttack() {
-        System.out.println("Starting attack sequence...");
-        // Spawn attacks
-        for (int i = 0; i < 5; i++) {
-            attacks.add(new SansAttack(1920, battleBox.getY() + (int) (Math.random() * battleBox.getHeight()), 20, 50, 7));
+        if (attackPhase >= 10) {
+            attackInProgress = false;
+            showButtons();
+            return;
         }
+
+        attackPhase++;
+        System.out.println("Starting attack phase " + attackPhase + ": " + attackPhase + " large bone(s) in " + attackPhase + " wave(s)");
+
+        attacks.clear();
+
+        int numWaves = attackPhase;
+        int waveDelay = 500;
+        int boneHeight = 100;
+        Timer waveTimer = new Timer(waveDelay, null);
+        ActionListener waveListener = new ActionListener() {
+            int currentWave = 0;
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (currentWave < numWaves) {
+                    int boxHeight = battleBox.getHeight();
+                    int maxY = boxHeight - boneHeight;
+                    int y = battleBox.getY() + (int) (Math.random() * maxY);
+
+                    attacks.add(new SansAttack(1920, y, 7));
+
+                    currentWave++;
+                } else {
+                    waveTimer.stop();
+                }
+            }
+        };
+        waveTimer.addActionListener(waveListener);
+        waveTimer.setInitialDelay(0);
+        waveTimer.start();
+
+        if (attackPhase == 10) {
+            Timer winTimer = new Timer(5000, e -> {
+                if (attacks.isEmpty()) {
+                    showWinScreen();
+                }
+            });
+            winTimer.setRepeats(false);
+            winTimer.start();
+        }
+    }
+
+    private void hideButtons() {
+        fightButton.setVisible(false);
+        actButton.setVisible(false);
+        itemButton.setVisible(false);
+        mercyButton.setVisible(false);
+        battlePanel.revalidate();
+        battlePanel.repaint();
+    }
+
+    private void showButtons() {
+        fightButton.setVisible(true);
+        actButton.setVisible(true);
+        itemButton.setVisible(true);
+        mercyButton.setVisible(true);
+        battlePanel.revalidate();
+        battlePanel.repaint();
+    }
+
+    private void showWinScreen() {
+        menuActive = true;
+        battlePanel.removeKeyListener(battlePanel.getKeyListeners()[0]);
+
+        JOptionPane.showMessageDialog(this, "You defeated Sans! Congratulations!",
+                "Victory!", JOptionPane.INFORMATION_MESSAGE);
+
+        dispose();
+        new MenuScreen();
     }
 
     private void updateAttacks() {
@@ -165,11 +232,21 @@ public class BattleScreen extends JFrame {
                 iter.remove();
             }
         }
+
+        if (attacks.isEmpty() && attackInProgress && attackPhase < 10) {
+            attackInProgress = false;
+            showButtons();
+        }
     }
 
     private void takeDamage(int damage) {
         health -= damage;
-        if (health < 0) health = 0;
+        if (health <= 0) {
+            health = 0;
+            System.out.println("Game Over!");
+            dispose();
+            new MenuScreen();
+        }
         System.out.println("Player took " + damage + " damage! HP: " + health);
     }
 
