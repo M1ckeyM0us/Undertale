@@ -1,19 +1,23 @@
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 public class BattleScreen extends JFrame {
+    private JPanel battlePanel; // Changed to instance variable for access
     private Soul me;
     private Box battleBox;
     private final Set<Integer> keysPressed = new HashSet<>();
     private static final int SPEED = 5;
     private Image sansImage;
     private JButton fightButton, actButton, itemButton, mercyButton;
-    private boolean menuActive = false; // Track if a menu is open
-    private int health = 92; // Player's health (Max: 92)
+    private boolean menuActive = false;
+    private int health = 92;
+    private List<SansAttack> attacks = new ArrayList<>();
 
     public BattleScreen() {
         setTitle("Sans Fight - Battle");
@@ -21,10 +25,8 @@ public class BattleScreen extends JFrame {
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        // Load Sans PNG
         sansImage = new ImageIcon(getClass().getResource("/Resources/Sans.png")).getImage();
 
-        // Battle box setup
         int boxWidth = 750;
         int boxHeight = 250;
         int boxX = (1920 - boxWidth) / 2;
@@ -33,28 +35,34 @@ public class BattleScreen extends JFrame {
         battleBox = new Box(boxX, boxY, boxWidth, boxHeight);
         me = new Soul(boxX + boxWidth / 2 - 8, boxY + boxHeight / 2 - 8, "/Resources/Soul.png", 16, 16);
 
-        JPanel battlePanel = new JPanel() {
+        // Initialize battlePanel as an instance variable
+        battlePanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 setBackground(Color.BLACK);
 
-                // Draw Sans PNG
                 g.drawImage(sansImage, 750, 50, 400, 400, this);
 
                 battleBox.draw(g);
                 if (!menuActive) me.draw(g);
 
-                // Draw health bar
+                for (SansAttack attack : attacks) {
+                    attack.draw(g);
+                }
+
                 drawHealthBar(g);
             }
         };
 
+        // Ensure battlePanel is focusable
         battlePanel.setFocusable(true);
+        battlePanel.requestFocusInWindow(); // Request focus initially
+
         add(battlePanel);
         setVisible(true);
 
-        // Add key listener to move the soul
+        // Key listener for movement
         battlePanel.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -67,44 +75,47 @@ public class BattleScreen extends JFrame {
             }
         });
 
-        // Timer for soul movement and repainting
+        // Timer to keep the game moving
         Timer timer = new Timer(16, e -> {
-            if (!menuActive) moveSoul();
-            battlePanel.repaint();
+            if (!menuActive) {
+                moveSoul();
+                updateAttacks();
+                battlePanel.repaint();
+            }
         });
         timer.start();
 
-        // Load button images
+        // Set up buttons
         ImageIcon fightIcon = new ImageIcon(getClass().getResource("/Resources/Fight1.png"));
         ImageIcon actIcon = new ImageIcon(getClass().getResource("/Resources/Act1.png"));
         ImageIcon itemIcon = new ImageIcon(getClass().getResource("/Resources/Item1.png"));
         ImageIcon mercyIcon = new ImageIcon(getClass().getResource("/Resources/Mercy1.png"));
 
-        // Create buttons
         fightButton = new JButton(fightIcon);
         actButton = new JButton(actIcon);
         itemButton = new JButton(itemIcon);
         mercyButton = new JButton(mercyIcon);
 
-        // Calculate button spacing
+        styleButton(fightButton);
+        styleButton(actButton);
+        styleButton(itemButton);
+        styleButton(mercyButton);
+
         int buttonWidth = fightIcon.getIconWidth();
         int buttonHeight = fightIcon.getIconHeight();
         int totalWidth = 4 * buttonWidth + 3 * 20;
         int startX = (getWidth() - totalWidth) / 2;
 
-        // Set button positions
         fightButton.setBounds(startX, 850, buttonWidth, buttonHeight);
         actButton.setBounds(startX + buttonWidth + 20, 850, buttonWidth, buttonHeight);
         itemButton.setBounds(startX + 2 * (buttonWidth + 20), 850, buttonWidth, buttonHeight);
         mercyButton.setBounds(startX + 3 * (buttonWidth + 20), 850, buttonWidth, buttonHeight);
 
-        // Add button actions
         fightButton.addActionListener(e -> selectOption("Fight"));
         actButton.addActionListener(e -> selectOption("Act"));
         itemButton.addActionListener(e -> selectOption("Item"));
         mercyButton.addActionListener(e -> selectOption("Mercy"));
 
-        // Add buttons
         battlePanel.setLayout(null);
         battlePanel.add(fightButton);
         battlePanel.add(actButton);
@@ -112,27 +123,48 @@ public class BattleScreen extends JFrame {
         battlePanel.add(mercyButton);
     }
 
+    private void styleButton(JButton button) {
+        button.setBorderPainted(false);
+        button.setContentAreaFilled(false);
+        button.setFocusPainted(false);
+        button.setOpaque(false);
+    }
+
     private void selectOption(String option) {
-        menuActive = true; // Stop soul movement
+        menuActive = false; // Allow movement
         System.out.println(option + " button pressed!");
 
         if (option.equals("Fight")) {
-            startAttack();
+            startAttack(); // Start the attack if 'Fight' is selected
         }
 
-        // Simulate closing menu after an action
-        Timer timer = new Timer(1000, e -> {
-            menuActive = false; // Allow movement again
-            keysPressed.clear(); // Reset key presses
-            requestFocusInWindow(); // Ensure the panel is focused to detect key presses
-        });
-        timer.setRepeats(false);
-        timer.start();
+        // Remove keysPressed.clear() to avoid resetting key states unnecessarily
+        // keysPressed.clear(); // Commented out
+
+        // Force focus back to battlePanel to ensure key events are captured
+        battlePanel.requestFocusInWindow();
     }
 
     private void startAttack() {
         System.out.println("Starting attack sequence...");
-        takeDamage(10); // Example damage when attacking
+        // Spawn attacks
+        for (int i = 0; i < 5; i++) {
+            attacks.add(new SansAttack(1920, battleBox.getY() + (int) (Math.random() * battleBox.getHeight()), 20, 50, 7));
+        }
+    }
+
+    private void updateAttacks() {
+        Iterator<SansAttack> iter = attacks.iterator();
+        while (iter.hasNext()) {
+            SansAttack attack = iter.next();
+            attack.update();
+            if (attack.checkCollision(me)) {
+                takeDamage(5);
+                iter.remove();
+            } else if (!attack.isActive()) {
+                iter.remove();
+            }
+        }
     }
 
     private void takeDamage(int damage) {
@@ -148,18 +180,20 @@ public class BattleScreen extends JFrame {
         int y = getHeight() - 100;
 
         g.setColor(Color.WHITE);
-        g.drawRect(x - 2, y - 2, barWidth + 4, barHeight + 4); // White border
+        g.drawRect(x - 2, y - 2, barWidth + 4, barHeight + 4);
 
         g.setColor(Color.RED);
         int currentWidth = (int) ((health / 92.0) * barWidth);
-        g.fillRect(x, y, currentWidth, barHeight); // Red health bar
+        g.fillRect(x, y, currentWidth, barHeight);
 
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 20));
-        g.drawString("HP: " + health + " / 92", x + 10, y + 22); // Display HP
+        g.drawString("HP: " + health + " / 92", x + 10, y + 22);
     }
 
     private void moveSoul() {
+        if (menuActive) return;
+
         int newX = me.getX();
         int newY = me.getY();
 
@@ -172,9 +206,5 @@ public class BattleScreen extends JFrame {
             me.setX(newX);
             me.setY(newY);
         }
-    }
-
-    public static void main(String[] args) {
-        new BattleScreen();
     }
 }
