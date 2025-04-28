@@ -253,20 +253,31 @@ public class BattleScreen extends JFrame {
     private void drawHealthBar(Graphics g) {
         int barWidth = 300;
         int barHeight = 30;
-        int x = 50;
-        int y = getHeight() - 100;
 
+        // Adjust the y position to place the health bar between the battle box and buttons
+        int x = (getWidth() - barWidth) / 2;  // Center the bar horizontally
+        int y = (getHeight() - 275) - 0;   // Adjusted position to move it higher
+
+        // Draw the health bar border
         g.setColor(Color.WHITE);
         g.drawRect(x - 2, y - 2, barWidth + 4, barHeight + 4);
 
-        g.setColor(Color.RED);
+        // Fill the health bar with yellow color based on current health
+        g.setColor(Color.YELLOW);
         int currentWidth = (int) ((health / 92.0) * barWidth);
         g.fillRect(x, y, currentWidth, barHeight);
 
+        // Draw text ("Chara  Lv 19 HP: currentHealth/92")
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 20));
-        g.drawString("HP: " + health + " / 92", x + 10, y + 22);
+
+        String text = "Chara  Lv 19   HP: " + health + " / 92";
+        int textWidth = g.getFontMetrics().stringWidth(text);
+
+        // Position the text horizontally centered above the health bar (same position as health bar)
+        g.drawString(text, (getWidth() - textWidth) / 2, y - 10);  // Slightly above the health bar
     }
+
 
     private void moveSoul() {
         if (menuActive) return;
