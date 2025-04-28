@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.ArrayList;
 import java.util.List;
+import javax.sound.sampled.*;
 
 public class BattleScreen extends JFrame {
     private JPanel battlePanel;
@@ -20,6 +21,7 @@ public class BattleScreen extends JFrame {
     private List<SansAttack> attacks = new ArrayList<>();
     private int attackPhase = 0;
     private boolean attackInProgress = false;
+    private Clip backgroundMusic;
 
     public BattleScreen() {
         setTitle("Sans Fight - Battle");
@@ -28,6 +30,18 @@ public class BattleScreen extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         sansImage = new ImageIcon(getClass().getResource("/Resources/Sans.png")).getImage();
+
+        // Initialize background music
+        try {
+            AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(
+                    getClass().getResource("/Resources/megalovania.wav"));
+            backgroundMusic = AudioSystem.getClip();
+            backgroundMusic.open(audioInputStream);
+            backgroundMusic.loop(Clip.LOOP_CONTINUOUSLY);
+            backgroundMusic.start();
+        } catch (Exception e) {
+            System.out.println("Error loading background music: " + e.getMessage());
+        }
 
         int boxWidth = 750;
         int boxHeight = 250;
@@ -212,12 +226,12 @@ public class BattleScreen extends JFrame {
     private void showWinScreen() {
         menuActive = true;
         battlePanel.removeKeyListener(battlePanel.getKeyListeners()[0]);
-
-        JOptionPane.showMessageDialog(this, "You defeated Sans! Congratulations!",
-                "Victory!", JOptionPane.INFORMATION_MESSAGE);
-
+        if (backgroundMusic != null) {
+            backgroundMusic.stop();
+            backgroundMusic.close();
+        }
         dispose();
-        new MenuScreen();
+        new EndScreen(true);
     }
 
     private void updateAttacks() {
@@ -244,8 +258,12 @@ public class BattleScreen extends JFrame {
         if (health <= 0) {
             health = 0;
             System.out.println("Game Over!");
+            if (backgroundMusic != null) {
+                backgroundMusic.stop();
+                backgroundMusic.close();
+            }
             dispose();
-            new MenuScreen();
+            new EndScreen(false);
         }
         System.out.println("Player took " + damage + " damage! HP: " + health);
     }
@@ -277,7 +295,6 @@ public class BattleScreen extends JFrame {
         // Position the text horizontally centered above the health bar (same position as health bar)
         g.drawString(text, (getWidth() - textWidth) / 2, y - 10);  // Slightly above the health bar
     }
-
 
     private void moveSoul() {
         if (menuActive) return;
