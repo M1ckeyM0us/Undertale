@@ -2,30 +2,46 @@ import java.awt.event.KeyEvent;
 import java.util.Set;
 
 public class Movement {
-    private Soul me;
-    private Box fightBox;
-    private Set<Integer> pressedKeys;
+
+    private Soul soul;
+    private Box box;
+    private Set<Integer> keys;
     private int speed = 4;
 
-    public Movement(Soul me, Box fightBox, Set<Integer> pressedKeys) {
-        this.me = me;
-        this.fightBox = fightBox;
-        this.pressedKeys = pressedKeys;
+    public Movement(Soul soul, Box box, Set<Integer> keys) {
+
+        this.soul = soul;
+        this.box = box;
+        this.keys = keys;
+
     }
 
     public void update() {
-        int newX = me.getX();
-        int newY = me.getY();
 
-        if (pressedKeys.contains(KeyEvent.VK_W)) newY -= speed;
-        if (pressedKeys.contains(KeyEvent.VK_S)) newY += speed;
-        if (pressedKeys.contains(KeyEvent.VK_A)) newX -= speed;
-        if (pressedKeys.contains(KeyEvent.VK_D)) newX += speed;
+        int x = soul.getX();
+        int y = soul.getY();
 
-        // Keep Soul inside the battle box
-        if (fightBox.contains(newX, newY, me.getSize())) {
-            me.setX(newX);
-            me.setY(newY);
+        if (keys.contains(KeyEvent.VK_W)){
+            y -= speed;
+        }
+
+        if (keys.contains(KeyEvent.VK_S)){
+            y += speed;
+        }
+
+        if (keys.contains(KeyEvent.VK_A)){
+            x -= speed;
+        }
+
+        if (keys.contains(KeyEvent.VK_D)){
+            x += speed;
+        }
+
+        if (box.contains(x, y, soul.getSize())) {
+
+            soul.setX(x);
+            soul.setY(y);
+
         }
     }
 }

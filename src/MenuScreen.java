@@ -1,76 +1,45 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 
 public class MenuScreen extends JFrame {
 
-    private Image titleImage;
-
+    private Image title;
 
     public MenuScreen() {
 
-        setTitle("Sans Fight - Menu");
         setSize(1920, 1080);
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        // Load Undertale title image
-        titleImage = new ImageIcon(getClass().getResource("/Resources/Undertale.png")).getImage();
+        // Load title image
+        title = new ImageIcon(getClass().getResource("/Resources/Undertale.png")).getImage();
 
-        // Create panel with black background
+        // Create panel
         JPanel panel = new JPanel() {
+            public void paintComponent(Graphics g) {
 
-            @Override
-            protected void paintComponent(Graphics g) {
-
-                super.paintComponent(g);
                 g.setColor(Color.BLACK);
-                g.fillRect(0, 0, getWidth(), getHeight()); // Full black background
-
-                // Draw title image at the top center
-                int titleWidth = 1800;
-                int titleHeight = 600;
-                int titleX = (getWidth() - titleWidth) / 2;
-                int titleY = -100;
-                g.drawImage(titleImage, titleX, titleY, titleWidth, titleHeight, this);
+                g.fillRect(0, 0, 1920, 1080);
+                g.drawImage(title, 60, -100, 1800, 600, this);
 
             }
-
         };
-
 
         panel.setLayout(null);
 
-        // Load "Fight" button image
-        JButton startButton = new JButton(new ImageIcon(getClass().getResource("/Resources/Fight.jpg")));
+        // Create button
+        JButton start = new JButton(new ImageIcon(getClass().getResource("/Resources/Fight.jpg")));
+        ImageIcon icon = (ImageIcon) start.getIcon();
+        start.setBounds((1920 - icon.getIconWidth()) / 2, 600, icon.getIconWidth(), icon.getIconHeight());
 
-        // Get button size from image
-        ImageIcon buttonIcon = (ImageIcon) startButton.getIcon();
-        int buttonWidth = buttonIcon.getIconWidth();
-        int buttonHeight = buttonIcon.getIconHeight();
+        // Button action
+        start.addActionListener(e -> {
 
-        // Set button position dynamically
-        int buttonX = (1920 - buttonWidth) / 2;
-        int buttonY = 600; // Below the title
+            setVisible(false);
+            new BattleScreen();
 
-        startButton.setBounds(buttonX, buttonY, buttonWidth, buttonHeight);
-        startButton.setBorderPainted(false);
-        startButton.setContentAreaFilled(false);
-        startButton.setFocusPainted(false);
-
-        startButton.addActionListener(new ActionListener() {
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-
-                dispose(); // Close menu
-                new BattleScreen(); // Open battle screen
-
-            }
         });
 
-        panel.add(startButton);
+        panel.add(start);
         add(panel);
         setVisible(true);
 

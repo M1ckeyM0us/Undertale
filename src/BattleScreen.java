@@ -1,315 +1,271 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
 import java.util.ArrayList;
-import java.util.List;
-import javax.sound.sampled.*;
 
 public class BattleScreen extends JFrame {
-    private JPanel battlePanel;
-    private Soul me;
-    private Box battleBox;
-    private final Set<Integer> keysPressed = new HashSet<>();
-    private static final int SPEED = 5;
-    private Image sansImage;
-    private JButton fightButton, actButton, itemButton, mercyButton;
-    private boolean menuActive = false;
-    private int health = 92;
-    private List<SansAttack> attacks = new ArrayList<>();
-    private int attackPhase = 0;
-    private boolean attackInProgress = false;
-    private Clip backgroundMusic;
+    private JPanel panel;
+    private Soul soul;
+    private Box box;
+    private Image sans;
+    private JButton fight, mercy;
+    private boolean inMenu = false;
+    private int hp = 92;
+    private ArrayList<SansAttack> bones = new ArrayList<>();
+    private int phase = 0;
+    private boolean attacking = false;
+    private boolean up, down, left, right;
 
     public BattleScreen() {
-        setTitle("Sans Fight - Battle");
         setSize(1920, 1080);
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        sansImage = new ImageIcon(getClass().getResource("/Resources/Sans.png")).getImage();
+        // Load Sans image
+        sans = new ImageIcon(getClass().getResource("/Resources/Sans.png")).getImage();
 
-        // Initialize background music
-        try {
-            AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(
-                    getClass().getResource("/Resources/megalovania.wav"));
-            backgroundMusic = AudioSystem.getClip();
-            backgroundMusic.open(audioInputStream);
-            backgroundMusic.loop(Clip.LOOP_CONTINUOUSLY);
-            backgroundMusic.start();
-        } catch (Exception e) {
-            System.out.println("Error loading background music: " + e.getMessage());
-        }
+        // Set up box and soul
+        box = new Box(585, 490, 750, 250);
+        soul = new Soul(960, 615, "/Resources/Soul.png", 16, 16);
 
-        int boxWidth = 750;
-        int boxHeight = 250;
-        int boxX = (1920 - boxWidth) / 2;
-        int boxY = (1080 - boxHeight) / 2 + 100;
+        // Create panel
+        panel = new JPanel() {
+            public void paintComponent(Graphics g) {
 
-        battleBox = new Box(boxX, boxY, boxWidth, boxHeight);
-        me = new Soul(boxX + boxWidth / 2 - 8, boxY + boxHeight / 2 - 8, "/Resources/Soul.png", 16, 16);
+                g.setColor(Color.BLACK);
+                g.fillRect(0, 0, 1920, 1080);
+                g.drawImage(sans, 750, 50, 400, 400, this);
+                box.draw(g);
+                if (!inMenu) soul.draw(g);
+                for (SansAttack bone : bones) bone.draw(g);
+                drawHP(g);
 
-        battlePanel = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                setBackground(Color.BLACK);
-
-                g.drawImage(sansImage, 750, 50, 400, 400, this);
-
-                battleBox.draw(g);
-                if (!menuActive) me.draw(g);
-
-                for (SansAttack attack : attacks) {
-                    attack.draw(g);
-                }
-
-                drawHealthBar(g);
             }
         };
 
-        battlePanel.setFocusable(true);
-        battlePanel.requestFocusInWindow();
+        panel.setLayout(null);
 
-        add(battlePanel);
-        setVisible(true);
+        // Set up buttons
+        fight = new JButton(new ImageIcon(getClass().getResource("/Resources/Fight1.png")));
+        mercy = new JButton(new ImageIcon(getClass().getResource("/Resources/Mercy1.png")));
 
-        battlePanel.addKeyListener(new KeyAdapter() {
-            @Override
+        int btnWidth = ((ImageIcon) fight.getIcon()).getIconWidth();
+        int startX = (1920 - 2 * btnWidth - 20) / 2;
+        fight.setBounds(startX, 850, btnWidth, fight.getIcon().getIconHeight());
+        mercy.setBounds(startX + btnWidth + 20, 850, btnWidth, mercy.getIcon().getIconHeight());
+
+        fight.addActionListener(e -> choose("Fight"));
+        mercy.addActionListener(e -> choose("Mercy"));
+
+        panel.add(fight);
+        panel.add(mercy);
+
+        // Set up keys
+        panel.addKeyListener(new KeyAdapter() {
             public void keyPressed(KeyEvent e) {
-                if (!menuActive) keysPressed.add(e.getKeyCode());
+                if (!inMenu) {
+                    if (e.getKeyCode() == KeyEvent.VK_W){
+                        up = true;
+                    }
+                    if (e.getKeyCode() == KeyEvent.VK_S){
+                        down = true;
+                    }
+                    if (e.getKeyCode() == KeyEvent.VK_A){
+                        left = true;
+                    }
+                    if (e.getKeyCode() == KeyEvent.VK_D){
+                        right = true;
+                    }
+                }
             }
-
-            @Override
             public void keyReleased(KeyEvent e) {
-                keysPressed.remove(e.getKeyCode());
+                if (e.getKeyCode() == KeyEvent.VK_W){
+                    up = false;
+                }
+                if (e.getKeyCode() == KeyEvent.VK_S){
+                    down = false;
+                }
+                if (e.getKeyCode() == KeyEvent.VK_A){
+                    left = false;
+                }
+                if (e.getKeyCode() == KeyEvent.VK_D){
+                    right = false;
+                }
             }
         });
+        panel.setFocusable(true);
+        panel.requestFocus();
 
-        Timer timer = new Timer(16, e -> {
-            if (!menuActive) {
-                moveSoul();
-                updateAttacks();
-                battlePanel.repaint();
+        // Start game loop
+        new Timer(16, e -> {
+            if (!inMenu) {
+                move();
+                updateBones();
+                panel.repaint();
             }
-        });
-        timer.start();
+        }).start();
 
-        ImageIcon fightIcon = new ImageIcon(getClass().getResource("/Resources/Fight1.png"));
-        ImageIcon actIcon = new ImageIcon(getClass().getResource("/Resources/Act1.png"));
-        ImageIcon itemIcon = new ImageIcon(getClass().getResource("/Resources/Item1.png"));
-        ImageIcon mercyIcon = new ImageIcon(getClass().getResource("/Resources/Mercy1.png"));
-
-        fightButton = new JButton(fightIcon);
-        actButton = new JButton(actIcon);
-        itemButton = new JButton(itemIcon);
-        mercyButton = new JButton(mercyIcon);
-
-        styleButton(fightButton);
-        styleButton(actButton);
-        styleButton(itemButton);
-        styleButton(mercyButton);
-
-        int buttonWidth = fightIcon.getIconWidth();
-        int buttonHeight = fightIcon.getIconHeight();
-        int totalWidth = 4 * buttonWidth + 3 * 20;
-        int startX = (getWidth() - totalWidth) / 2;
-
-        fightButton.setBounds(startX, 850, buttonWidth, buttonHeight);
-        actButton.setBounds(startX + buttonWidth + 20, 850, buttonWidth, buttonHeight);
-        itemButton.setBounds(startX + 2 * (buttonWidth + 20), 850, buttonWidth, buttonHeight);
-        mercyButton.setBounds(startX + 3 * (buttonWidth + 20), 850, buttonWidth, buttonHeight);
-
-        fightButton.addActionListener(e -> selectOption("Fight"));
-        actButton.addActionListener(e -> selectOption("Act"));
-        itemButton.addActionListener(e -> selectOption("Item"));
-        mercyButton.addActionListener(e -> selectOption("Mercy"));
-
-        battlePanel.setLayout(null);
-        battlePanel.add(fightButton);
-        battlePanel.add(actButton);
-        battlePanel.add(itemButton);
-        battlePanel.add(mercyButton);
+        add(panel);
+        setVisible(true);
     }
 
-    private void styleButton(JButton button) {
-        button.setBorderPainted(false);
-        button.setContentAreaFilled(false);
-        button.setFocusPainted(false);
-        button.setOpaque(false);
+    private void move() {
+        int x = soul.getX();
+        int y = soul.getY();
+
+        if (up) y -= 5;
+        if (down) y += 5;
+        if (left) x -= 5;
+        if (right) x += 5;
+
+        if (box.contains(x, y, soul.getSize())) {
+            soul.setX(x);
+            soul.setY(y);
+        }
     }
 
-    private void selectOption(String option) {
-        if (attackInProgress) return;
+    private void choose(String option) {
+        if (attacking) return;  // Prevent actions while attacking
 
         if (option.equals("Fight")) {
-            attackInProgress = true;
+            attacking = true;
             hideButtons();
             startAttack();
-        } else {
-            menuActive = false;
-            System.out.println(option + " button pressed!");
-        }
+        } else if (option.equals("Mercy")) {
+            // When Mercy button is clicked, show the victory screen immediately
+            System.out.println("Mercy");
 
-        battlePanel.requestFocusInWindow();
+            // Hide the buttons and start the victory screen after a delay (15 seconds)
+            Timer mercyTimer = new Timer(1500, e -> {  // Small delay for better transition
+                new EndScreen(true);  // Trigger victory end screen (You Won)
+                dispose();  // Close the BattleScreen frame
+            });
+            mercyTimer.setRepeats(false);  // Trigger only once
+            mercyTimer.start();
+        }
+        panel.requestFocus();
     }
 
+
+
     private void startAttack() {
-        if (attackPhase >= 10) {
-            attackInProgress = false;
+
+        if (phase >= 10) {
+            attacking = false;
             showButtons();
             return;
         }
 
-        attackPhase++;
-        System.out.println("Starting attack phase " + attackPhase + ": " + attackPhase + " large bone(s) in " + attackPhase + " wave(s)");
+        phase++;
+        System.out.println("Phase " + phase);
 
-        attacks.clear();
+        bones.clear();  // Reset bones at the start of each attack phase
+        final int[] waves = {phase};
+        Timer waveTimer = new Timer(500, e -> {
+            if (waves[0] > 0) {
 
-        int numWaves = attackPhase;
-        int waveDelay = 500;
-        int boneHeight = 100;
-        Timer waveTimer = new Timer(waveDelay, null);
-        ActionListener waveListener = new ActionListener() {
-            int currentWave = 0;
+                // Random y position within the box area
+                int y = box.getY() + (int) (Math.random() * (box.getHeight() - 100));
+                bones.add(new SansAttack(1920, y, 7));  // Add new attack bone
+                waves[0]--;  // Decrement the wave counter
 
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (currentWave < numWaves) {
-                    int boxHeight = battleBox.getHeight();
-                    int maxY = boxHeight - boneHeight;
-                    int y = battleBox.getY() + (int) (Math.random() * maxY);
-
-                    attacks.add(new SansAttack(1920, y, 7));
-
-                    currentWave++;
-                } else {
-                    waveTimer.stop();
-                }
             }
-        };
-        waveTimer.addActionListener(waveListener);
-        waveTimer.setInitialDelay(0);
-        waveTimer.start();
 
-        if (attackPhase == 10) {
-            Timer winTimer = new Timer(5000, e -> {
-                if (attacks.isEmpty()) {
-                    showWinScreen();
+            else {
+
+                ((Timer) e.getSource()).stop();  // Stop the wave timer when no more waves are left
+
+            }
+        });
+        waveTimer.start();  // Start the wave timer
+
+        // After phase 10, end the game if bones are empty
+        if (phase == 10) {
+            Timer endGameTimer = new Timer(5000, e -> {
+
+                if (bones.isEmpty()) {
+                    endGame(true);  // End the game if no bones are left
+
                 }
             });
-            winTimer.setRepeats(false);
-            winTimer.start();
+
+            endGameTimer.setRepeats(false);  // Ensure the timer only runs once
+            endGameTimer.start();  // Start the end game timer
+
         }
     }
 
+
     private void hideButtons() {
-        fightButton.setVisible(false);
-        actButton.setVisible(false);
-        itemButton.setVisible(false);
-        mercyButton.setVisible(false);
-        battlePanel.revalidate();
-        battlePanel.repaint();
+
+        fight.setVisible(false);
+        mercy.setVisible(false);
+
     }
 
     private void showButtons() {
-        fightButton.setVisible(true);
-        actButton.setVisible(true);
-        itemButton.setVisible(true);
-        mercyButton.setVisible(true);
-        battlePanel.revalidate();
-        battlePanel.repaint();
+
+        fight.setVisible(true);
+        mercy.setVisible(true);
+
     }
 
-    private void showWinScreen() {
-        menuActive = true;
-        battlePanel.removeKeyListener(battlePanel.getKeyListeners()[0]);
-        if (backgroundMusic != null) {
-            backgroundMusic.stop();
-            backgroundMusic.close();
-        }
-        dispose();
-        new EndScreen(true);
+    private void endGame(boolean won) {
+
+        inMenu = true;
+        panel.removeKeyListener(panel.getKeyListeners()[0]);
+        setVisible(false);
+        new EndScreen(won);
+
     }
 
-    private void updateAttacks() {
-        Iterator<SansAttack> iter = attacks.iterator();
-        while (iter.hasNext()) {
-            SansAttack attack = iter.next();
-            attack.update();
-            if (attack.checkCollision(me)) {
-                takeDamage(5);
-                iter.remove();
-            } else if (!attack.isActive()) {
-                iter.remove();
+    private void updateBones() {
+        for (int i = 0; i < bones.size(); i++) {
+
+            SansAttack bone = bones.get(i);
+            bone.update();
+
+            if (bone.checkCollision(soul)) {
+
+                hp -= 5;
+                bones.remove(i);
+                i--;
+
+                if (hp <= 0) {
+                    hp = 0;
+                    System.out.println("Game Over");
+                    endGame(false);
+                }
+
+                System.out.println("HP: " + hp);
+
+            }
+
+            else if (!bone.isActive()) {
+
+                bones.remove(i);
+                i--;
+
             }
         }
 
-        if (attacks.isEmpty() && attackInProgress && attackPhase < 10) {
-            attackInProgress = false;
+        if (bones.isEmpty() && attacking && phase < 10) {
+            attacking = false;
             showButtons();
+
         }
     }
 
-    private void takeDamage(int damage) {
-        health -= damage;
-        if (health <= 0) {
-            health = 0;
-            System.out.println("Game Over!");
-            if (backgroundMusic != null) {
-                backgroundMusic.stop();
-                backgroundMusic.close();
-            }
-            dispose();
-            new EndScreen(false);
-        }
-        System.out.println("Player took " + damage + " damage! HP: " + health);
-    }
+    private void drawHP(Graphics g) {
+        int x = 810;
+        int y = 805;
 
-    private void drawHealthBar(Graphics g) {
-        int barWidth = 300;
-        int barHeight = 30;
-
-        // Adjust the y position to place the health bar between the battle box and buttons
-        int x = (getWidth() - barWidth) / 2;  // Center the bar horizontally
-        int y = (getHeight() - 275) - 0;   // Adjusted position to move it higher
-
-        // Draw the health bar border
         g.setColor(Color.WHITE);
-        g.drawRect(x - 2, y - 2, barWidth + 4, barHeight + 4);
-
-        // Fill the health bar with yellow color based on current health
+        g.drawRect(x - 2, y - 2, 304, 34);
         g.setColor(Color.YELLOW);
-        int currentWidth = (int) ((health / 92.0) * barWidth);
-        g.fillRect(x, y, currentWidth, barHeight);
-
-        // Draw text ("Chara  Lv 19 HP: currentHealth/92")
+        g.fillRect(x, y, (int) ((hp / 92.0) * 300), 30);
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 20));
+        String text = "Chara  Lv 19   HP: " + hp + " / 92";
+        g.drawString(text, (1920 - g.getFontMetrics().stringWidth(text)) / 2, y - 10);
 
-        String text = "Chara  Lv 19   HP: " + health + " / 92";
-        int textWidth = g.getFontMetrics().stringWidth(text);
-
-        // Position the text horizontally centered above the health bar (same position as health bar)
-        g.drawString(text, (getWidth() - textWidth) / 2, y - 10);  // Slightly above the health bar
-    }
-
-    private void moveSoul() {
-        if (menuActive) return;
-
-        int newX = me.getX();
-        int newY = me.getY();
-
-        if (keysPressed.contains(KeyEvent.VK_W)) newY -= SPEED;
-        if (keysPressed.contains(KeyEvent.VK_S)) newY += SPEED;
-        if (keysPressed.contains(KeyEvent.VK_A)) newX -= SPEED;
-        if (keysPressed.contains(KeyEvent.VK_D)) newX += SPEED;
-
-        if (battleBox.contains(newX, newY, me.getSize())) {
-            me.setX(newX);
-            me.setY(newY);
-        }
     }
 }
