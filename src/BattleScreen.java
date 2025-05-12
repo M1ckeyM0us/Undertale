@@ -76,6 +76,7 @@ public class BattleScreen extends JFrame {
                     }
                 }
             }
+
             public void keyReleased(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_W){
                     up = false;
