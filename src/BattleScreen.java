@@ -17,10 +17,12 @@ public class BattleScreen extends JFrame {
     private boolean up, down, left, right;
 
     public BattleScreen() {
+
+        setResizable(true); // Enables resizing
         setSize(1920, 1080);
 
         // Load Sans image
-        sans = new ImageIcon(getClass().getResource("/Resources/Sans.png")).getImage();
+        sans = new ImageIcon(getClass().getResource("/Resources/boi GIF.gif")).getImage();
 
         // Set up box and soul
         box = new Box(585, 490, 750, 250);
@@ -264,9 +266,11 @@ public class BattleScreen extends JFrame {
         g.setColor(Color.YELLOW);
         g.fillRect(x, y, (int) ((hp / 92.0) * 300), 30);
         g.setColor(Color.WHITE);
+
         g.setFont(new Font("Arial", Font.BOLD, 20));
         String text = "Chara  Lv 19   HP: " + hp + " / 92";
         g.drawString(text, (1920 - g.getFontMetrics().stringWidth(text)) / 2, y - 10);
 
     }
+
 }

@@ -7,7 +7,6 @@ public class MenuScreen extends JFrame {
     private Image title;
 
     public MenuScreen() {
-
         setSize(1920, 1080);
 
         // Load title image
