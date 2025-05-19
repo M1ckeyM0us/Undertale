@@ -18,17 +18,14 @@ public class BattleScreen extends JFrame {
 
     public BattleScreen() {
 
-        setResizable(true); // Enables resizing
+        setResizable(true);
         setSize(1920, 1080);
 
-        // Load Sans image
         sans = new ImageIcon(getClass().getResource("/Resources/boi GIF.gif")).getImage();
 
-        // Set up box and soul
         box = new Box(585, 490, 750, 250);
         soul = new Soul(960, 615, "/Resources/Soul.png", 16, 16);
 
-        // Create panel
         panel = new JPanel() {
             public void paintComponent(Graphics g) {
 
@@ -45,7 +42,6 @@ public class BattleScreen extends JFrame {
 
         panel.setLayout(null);
 
-        // Set up buttons
         fight = new JButton(new ImageIcon(getClass().getResource("/Resources/Fight1.png")));
         mercy = new JButton(new ImageIcon(getClass().getResource("/Resources/Mercy1.png")));
 
@@ -97,7 +93,6 @@ public class BattleScreen extends JFrame {
         panel.setFocusable(true);
         panel.requestFocus();
 
-        // Start game loop
         new Timer(16, e -> {
             if (!inMenu) {
                 move();
@@ -126,22 +121,20 @@ public class BattleScreen extends JFrame {
     }
 
     private void choose(String option) {
-        if (attacking) return;  // Prevent actions while attacking
+        if (attacking) return;
 
         if (option.equals("Fight")) {
             attacking = true;
             hideButtons();
             startAttack();
         } else if (option.equals("Mercy")) {
-            // When Mercy button is clicked, show the victory screen immediately
             System.out.println("Mercy");
 
-            // Hide the buttons and start the victory screen after a delay (15 seconds)
-            Timer mercyTimer = new Timer(1500, e -> {  // Small delay for better transition
-                new EndScreen(true);  // Trigger victory end screen (You Won)
-                dispose();  // Close the BattleScreen frame
+            Timer mercyTimer = new Timer(1500, e -> {
+                new EndScreen(true);
+                dispose();
             });
-            mercyTimer.setRepeats(false);  // Trigger only once
+            mercyTimer.setRepeats(false);
             mercyTimer.start();
         }
         panel.requestFocus();
@@ -160,42 +153,41 @@ public class BattleScreen extends JFrame {
         phase++;
         System.out.println("Phase " + phase);
 
-        bones.clear();  // Reset bones at the start of each attack phase
-        final int[] waves = {phase};
+        bones.clear();
+        final int[] waves = {
+                phase
+        };
         Timer waveTimer = new Timer(500, e -> {
             if (waves[0] > 0) {
 
-                // Random y position within the box area
                 int y = box.getY() + (int) (Math.random() * (box.getHeight() - 100));
-                bones.add(new SansAttack(1920, y, 7));  // Add new attack bone
-                waves[0]--;  // Decrement the wave counter
+                bones.add(new SansAttack(1920, y, 7));
+                waves[0]--;
 
             }
 
             else {
 
-                ((Timer) e.getSource()).stop();  // Stop the wave timer when no more waves are left
+                ((Timer) e.getSource()).stop();
 
             }
         });
-        waveTimer.start();  // Start the wave timer
+        waveTimer.start();
 
-        // After phase 10, end the game if bones are empty
         if (phase == 10) {
             Timer endGameTimer = new Timer(5000, e -> {
 
                 if (bones.isEmpty()) {
-                    endGame(true);  // End the game if no bones are left
+                    endGame(true);
 
                 }
             });
 
-            endGameTimer.setRepeats(false);  // Ensure the timer only runs once
-            endGameTimer.start();  // Start the end game timer
+            endGameTimer.setRepeats(false);
+            endGameTimer.start();
 
         }
     }
-
 
     private void hideButtons() {
 
