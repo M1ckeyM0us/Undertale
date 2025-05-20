@@ -9,13 +9,12 @@ public class EndScreen extends JFrame {
     private final Random random = new Random();
     private double shakeX = 0;
     private double shakeY = 0;
-    private String message;  // Declare a variable for the message
+    private String message;
 
     public EndScreen(boolean won) {
 
         this.won = won;
 
-        // Set the title based on whether the player won or lost
         if (won) {
             message = "You Won!";
         }
@@ -39,7 +38,6 @@ public class EndScreen extends JFrame {
                 g.setColor(Color.WHITE);
                 g.setFont(new Font("Monospaced", Font.BOLD, 60));
 
-                // Apply shaking effect
                 int messageWidth = g.getFontMetrics().stringWidth(message);
                 int x = (getWidth() - messageWidth) / 2 + (int)shakeX;
                 int y = getHeight() / 2 - 20 + (int) shakeY;
@@ -69,9 +67,8 @@ public class EndScreen extends JFrame {
             }
         });
 
-        // Animation timer for shaking
         Timer timer = new Timer(16, e -> {
-            // Update shaking
+
             shakeX = random.nextGaussian() * 5; // ±5 pixels
             shakeY = random.nextGaussian() * 5;
             panel.repaint();
